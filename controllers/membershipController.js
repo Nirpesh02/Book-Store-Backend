@@ -169,3 +169,61 @@ export const rejectRequest = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Remove membership from a user (Admin) — keeps the account, only strips membership
+// @route   POST /api/membership/remove/:userId
+// @access  Private/Admin
+export const removeMembership = async (req, res) => {
+  try {
+    if (req.user.adminType !== 'permanent') {
+      return res.status(403).json({ message: 'Access denied. Only main admins can remove memberships.' });
+    }
+
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.membershipNumber && user.membershipRequestStatus !== 'Pending' && user.membershipRequestStatus !== 'Approved') {
+      return res.status(400).json({ message: 'This user does not have an active membership.' });
+    }
+
+    // Clean up citizenship images from Cloudinary to save storage
+    for (const url of [user.citizenshipFront, user.citizenshipBack]) {
+      const publicId = extractPublicId(url);
+      if (publicId) {
+        try {
+          await cloudinary.uploader.destroy(publicId, { invalidate: true });
+          console.log(`Deleted citizenship image: ${publicId}`);
+        } catch (err) {
+          console.error('Failed to delete citizenship image:', err);
+        }
+      }
+    }
+
+    // Reset all membership-related fields
+    user.membershipRequestStatus = 'None';
+    user.membershipNumber = '';
+    user.tier = 'Standard';
+    user.citizenshipFront = '';
+    user.citizenshipBack = '';
+    user.location = '';
+
+    await user.save();
+
+    res.json({
+      message: 'Membership removed successfully. Account is still active.',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        tier: user.tier,
+        membershipNumber: user.membershipNumber,
+        membershipRequestStatus: user.membershipRequestStatus,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

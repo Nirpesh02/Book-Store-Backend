@@ -5,6 +5,7 @@ import {
   getPendingRequests,
   approveRequest,
   rejectRequest,
+  removeMembership,
 } from '../controllers/membershipController.js';
 
 const router = express.Router();
@@ -16,5 +17,6 @@ router.post('/apply', protect, applyForMembership);
 router.get('/requests', protect, adminOnly, getPendingRequests);
 router.post('/approve/:userId', protect, adminOnly, approveRequest);
 router.post('/reject/:userId', protect, adminOnly, rejectRequest);
+router.post('/remove/:userId', protect, adminOnly, removeMembership);
 
 export default router;
