@@ -3,6 +3,11 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { connectDB } from './config/db.js';
 
+// Force Node.js to use IPv4 first. This prevents ENETUNREACH errors 
+// when connecting to SMTP (Gmail) on environments like Render with buggy IPv6.
+import dns from 'dns';
+dns.setDefaultResultOrder('ipv4first');
+
 // Route imports
 import authRoutes from './routes/authRoutes.js';
 import bookRoutes from './routes/bookRoutes.js';
