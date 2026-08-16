@@ -20,6 +20,14 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Password is required'],
       minlength: 1,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationToken: {
+      type: String,
+      default: '',
+    },
     role: {
       type: String,
       enum: ['admin', 'client'],

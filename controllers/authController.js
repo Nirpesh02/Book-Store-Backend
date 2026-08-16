@@ -2,6 +2,35 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.js';
 import cloudinary from '../config/cloudinary.js';
+import nodemailer from 'nodemailer';
+
+// Helper to send Verification Email
+const sendVerificationEmail = async (email, token) => {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail', // Use your email provider service
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const verifyUrl = `https://book-store-backend-39qh.onrender.com/api/auth/verify/${token}`;
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER || 'no-reply@bookverse.com',
+    to: email,
+    subject: 'Bookverse - Please verify your email',
+    html: `
+      <h2>Welcome to Bookverse!</h2>
+      <p>Thank you for registering. Please click the link below to verify your email address.</p>
+      <a href="${verifyUrl}" style="padding: 10px 20px; background-color: #7a9b83; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Verify Email</a>
+      <p>Or copy and paste this URL into your browser:</p>
+      <p><a href="${verifyUrl}">${verifyUrl}</a></p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -25,13 +54,25 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: 'An account with this email address already exists!' });
     }
 
+    // Generate Verification Token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+
     // Create user
     const user = await User.create({
       name,
       email: email.toLowerCase(),
       password,
       role: 'client',
+      verificationToken,
+      isVerified: false,
     });
+
+    // Send verification email
+    try {
+      await sendVerificationEmail(user.email, verificationToken);
+    } catch (emailError) {
+      console.error('Error sending verification email:', emailError);
+    }
 
     res.status(201).json({
       _id: user._id,
@@ -85,7 +126,9 @@ export const login = async (req, res) => {
       });
     }
 
-
+    if (!user.isVerified && user.role === 'client') {
+      return res.status(403).json({ message: 'Please verify your email address before logging in. Check your inbox.' });
+    }
 
     if (user.status === 'Suspended') {
       return res.status(403).json({ message: 'Account is suspended. Contact admin.' });
@@ -225,4 +268,33 @@ export const forgotPassword = async (req, res) => {
 export const logout = (req, res) => {
   res.cookie('token', '', { httpOnly: true, expires: new Date(0) });
   res.json({ message: 'Logged out successfully' });
+};
+
+// @desc    Verify email
+// @route   GET /api/auth/verify/:token
+// @access  Public
+export const verifyEmail = async (req, res) => {
+  // Use frontend URL from .env or default to localhost:5173 (Vite standard)
+  const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+  try {
+    const { token } = req.params;
+
+    const user = await User.findOne({ verificationToken: token });
+
+    if (!user) {
+      // Redirect to frontend with error status
+      return res.redirect(`${FRONTEND_URL}/login?status=error`);
+    }
+
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    await user.save();
+
+    // Redirect to frontend with success status
+    res.redirect(`${FRONTEND_URL}/login?status=success`);
+  } catch (error) {
+    console.error('Verification error:', error);
+    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?status=error`);
+  }
 };
