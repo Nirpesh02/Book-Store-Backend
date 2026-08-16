@@ -8,8 +8,8 @@ import nodemailer from 'nodemailer';
 const sendVerificationEmail = async (email, token) => {
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false, // Use STARTTLS instead of implicit TLS (port 465) to fix ENETUNREACH in Render/some ISPs
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,

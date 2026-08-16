@@ -10,7 +10,9 @@ async function testEmail() {
     log += `User: ${user}\nPass Length: ${pass ? pass.length : 0}\n`;
 
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // Use STARTTLS
       auth: { user, pass }
     });
 
