@@ -287,7 +287,7 @@ export const verifyEmail = async (req, res) => {
 
     if (!user) {
       // Redirect to frontend with error status
-      return res.redirect(`${FRONTEND_URL}/login?status=error`);
+      return res.redirect(`${FRONTEND_URL}/?status=error`);
     }
 
     user.isVerified = true;
@@ -295,9 +295,9 @@ export const verifyEmail = async (req, res) => {
     await user.save();
 
     // Redirect to frontend with success status
-    res.redirect(`${FRONTEND_URL}/login?status=success`);
+    res.redirect(`${FRONTEND_URL}/?status=success`);
   } catch (error) {
     console.error('Verification error:', error);
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?status=error`);
+    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/?status=error`);
   }
 };
