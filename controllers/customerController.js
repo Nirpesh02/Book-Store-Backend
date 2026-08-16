@@ -41,45 +41,7 @@ export const getCustomers = async (req, res) => {
   }
 };
 
-// @desc    Register a customer (by admin)
-// @route   POST /api/customers
-// @access  Private/Admin
-export const addCustomer = async (req, res) => {
-  try {
-    const { name, email, password, tier } = req.body;
 
-    if (!name || !email) {
-      return res.status(400).json({ message: 'Name and email are required' });
-    }
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return res.status(400).json({ message: 'A user with this email already exists' });
-    }
-
-    const customer = await User.create({
-      name,
-      email: email.toLowerCase(),
-      password: password || '123',
-      role: 'client',
-      tier: tier || 'Standard',
-      status: 'Active',
-    });
-
-    res.status(201).json({
-      _id: customer._id,
-      name: customer.name,
-      email: customer.email,
-      role: customer.role,
-      tier: customer.tier,
-      status: customer.status,
-      activeOrders: 0,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
 // @desc    Toggle customer status (Active/Suspended)
 // @route   PATCH /api/customers/:id/toggle-status
