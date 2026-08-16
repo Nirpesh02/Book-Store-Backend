@@ -74,9 +74,13 @@ export const register = async (req, res) => {
       await sendVerificationEmail(user.email, verificationToken);
     } catch (emailError) {
       console.error('Error sending verification email:', emailError);
-      // Delete the created user if email fails so they aren't stuck with an unverified account
-      await User.findByIdAndDelete(user._id);
-      return res.status(500).json({ message: 'Email Error: ' + emailError.message });
+      console.log('--- VERIFICATION BYPASS ---');
+      console.log(`Render Free blocks SMTP. Auto-verifying user. Verification Link would be: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/?status=success`);
+      
+      // Since Render free blocks SMTP (ports 465/587), auto-verify if email fails
+      // so the user can still login and test the platform.
+      user.isVerified = true;
+      await user.save();
     }
 
     res.status(201).json({
