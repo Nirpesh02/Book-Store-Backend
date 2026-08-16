@@ -1,0 +1,4 @@
+node_modules
+.env
+test-email.js
+test-output.txt
