@@ -22,9 +22,6 @@ export const register = async (req, res) => {
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      if (existingUser.status === 'Pending') {
-        return res.status(400).json({ message: 'This email verification is going on. Please wait for admin approval.' });
-      }
       return res.status(400).json({ message: 'An account with this email address already exists!' });
     }
 
@@ -34,7 +31,6 @@ export const register = async (req, res) => {
       email: email.toLowerCase(),
       password,
       role: 'client',
-      status: 'Pending',
     });
 
     res.status(201).json({
@@ -89,9 +85,7 @@ export const login = async (req, res) => {
       });
     }
 
-    if (user.status === 'Pending') {
-      return res.status(403).json({ message: 'Unable to login. Your account is not verified yet. Please wait for admin approval.' });
-    }
+
 
     if (user.status === 'Suspended') {
       return res.status(403).json({ message: 'Account is suspended. Contact admin.' });
