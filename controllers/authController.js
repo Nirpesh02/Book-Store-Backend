@@ -72,6 +72,9 @@ export const register = async (req, res) => {
       await sendVerificationEmail(user.email, verificationToken);
     } catch (emailError) {
       console.error('Error sending verification email:', emailError);
+      // Delete the created user if email fails so they aren't stuck with an unverified account
+      await User.findByIdAndDelete(user._id);
+      return res.status(500).json({ message: 'Failed to send verification email. Please check your EMAIL_USER and EMAIL_PASS configuration.' });
     }
 
     res.status(201).json({
